@@ -29,7 +29,7 @@ exports.createStockTransfer = catchAsync(async (req, res, next) => {
     await inventoryTo.save({ validateBeforeSave: false });
     await to.save();
   }
-  //3- create stock transfer
+  // 3- create stock transfer
   res.status(201).json({
     status: "success",
     data: {
