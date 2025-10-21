@@ -1,9 +1,13 @@
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const Stock = require("./../models/stockModel");
+const SaleOrder = require("./../models/saleOrderModel");
+const Jornal = require("./../models/jornalModel");
 const PurchaseOrder = require("./../models/purchaseOrderModel");
 const StockMovement = require("./../models/stockMovementModel");
 const Inventory = require("../models/inventoryModel");
+const JornalEntry = require("../models/jornalEntryModel");
+const Account = require("./../models/accountingModel");
 // add product to inventory
 exports.addStockToInventory = catchAsync(async (req, res, next) => {
   const { inventoryId } = req.params;
@@ -160,11 +164,78 @@ exports.stockIn = catchAsync(async (req, res, next) => {
       new: true,
     }
   );
+  // create journal entry for stock in
+  const journal = await Jornal.findOne({ jornalType: "purchases" });
+  const accountpurchases = await Account.findOne({ name: "purchases-expense" });
+  const accountBank = await Account.findOne({ name: "cash/bank" });
+  await JornalEntry.create({
+    jornalId: journal._id,
+    lines: [
+      {
+        accountId: accountpurchases._id,
+        description: `Records purchases made ${purchaseOrder.totalAmount} for stocking inventory`,
+        debit: 0,
+        credit: purchaseOrder.totalAmount,
+      },
+      {
+        accountId: accountBank._id,
+        description: `Tracks cash paid ${purchaseOrder.totalAmount} for purchasing inventory stock`,
+        debit: purchaseOrder.totalAmount,
+        credit: 0,
+      },
+    ],
+  });
+
   res.status(200).json({
     status: "success",
     message: "stock charged successfully",
     data: {
       updatedPurchaseOrder,
     },
+  });
+});
+
+// update sale order status to confirmed and make stock out and create journal entry
+exports.stockOut = catchAsync(async (req, res, next) => {
+  const { saleOrderId } = req.params;
+  if (!saleOrderId) return next(new AppError("sale order id is required", 500));
+  const saleOrder = await SaleOrder.findById(saleOrderId);
+  if (!saleOrder) return next(new AppError("sale order not found", 404));
+  for (let product of saleOrder.products) {
+    const { inventoryId, quantity, productId } = product;
+    const stock = await Stock.findOne({ productId, inventoryId });
+    stock.quantity -= quantity;
+    await stock.save({ validateBeforeSave: false });
+    const inventory = await Inventory.findById(inventoryId);
+    inventory.capacity += quantity;
+    await inventory.save({ validateBeforeSave: false });
+  }
+  saleOrder.status = "delivered";
+  await saleOrder.save({ validateBeforeSave: false });
+  const jornal = await Jornal.findOne({ jornalType: "sales" });
+  const accountRevenue = await Account.findOne({ name: "sales-revenue" });
+  const accountCustomerReceivable = await Account.findOne({
+    name: "customer-receivable",
+  });
+  await JornalEntry.create({
+    jornalId: jornal._id,
+    lines: [
+      {
+        accountId: accountRevenue._id,
+        description: `Records income earned ${saleOrder.totalAmount} from selling goods`,
+        debit: 0,
+        credit: saleOrder.totalAmount,
+      },
+      {
+        accountId: accountCustomerReceivable._id,
+        description: `Tracks money ${saleOrder.totalAmount} owed by customers for credit sales`,
+        debit: saleOrder.totalAmount,
+        credit: 0,
+      },
+    ],
+  });
+  res.status(201).json({
+    status: "success",
+    message: "Sale order delivered and stock updated",
   });
 });
