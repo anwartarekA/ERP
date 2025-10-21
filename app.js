@@ -16,6 +16,7 @@ const categoryRouter = require("./routers/categoryRouter.js");
 const stockTransferRouter = require("./routers/stockTransferRouter.js");
 const loanRouter = require("./routers/loanRouter.js");
 const installmentRouter = require("./routers/installmentRouter.js");
+const saleOrderRouter = require("./routers/saleOrderRouter.js");
 const authRouter = require("./authRouters/authRouter");
 const globalErrorHandling = require("./utils/globalErrorHandling");
 const AppError = require("./utils/appError");
@@ -39,6 +40,7 @@ app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/stockTransfer", stockTransferRouter);
 app.use("/api/v1/loans", loanRouter);
 app.use("/api/v1/installments", installmentRouter);
+app.use("/api/v1/saleOrders", saleOrderRouter);
 app.use("/", (req, res, next) => {
   res.send("Welcome to ERP");
 });

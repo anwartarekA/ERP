@@ -3,6 +3,10 @@ const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const Stock = require("./../models/stockModel");
 const Inventory = require("../models/inventoryModel");
+const JornalEntry = require("../models/jornalEntryModel");
+const Jornal = require("../models/jornalModel");
+const account = require("../models/accountingModel");
+const Account = require("../models/accountingModel");
 // create stock transfer
 exports.createStockTransfer = catchAsync(async (req, res, next) => {
   const stockTransfer = await StockTransfer.create(req.body);
@@ -29,6 +33,29 @@ exports.createStockTransfer = catchAsync(async (req, res, next) => {
     await inventoryTo.save({ validateBeforeSave: false });
     await to.save();
   }
+  // create journal entry for stock transfer
+  const jornal = await Jornal.findOne({ jornalType: "stock-transfer" });
+  const accountExpense = await Account.findOne({ name: "expenses" });
+  const accountBank = await Account.findOne({ name: "cash/bank" });
+  await JornalEntry.create({
+    jornalId: jornal._id,
+    lines: [
+      {
+        accountId: accountExpense._id,
+        description: `Records shipping cost ${stockTransfer.shippingCost} for stock transfer`,
+        debit: 0,
+        credit: stockTransfer.shippingCost,
+      },
+      {
+        accountId: accountBank._id,
+        description: `Tracks cash paid ${stockTransfer.shippingCost} for stock transfer`,
+        debit: stockTransfer.shippingCost,
+        credit: 0,
+      },
+    ],
+  });
+  stockTransfer.status = "transferred";
+  await stockTransfer.save({ validateBeforeSave: false });
   // 3- create stock transfer
   res.status(201).json({
     status: "success",
