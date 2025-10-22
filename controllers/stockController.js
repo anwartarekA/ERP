@@ -25,7 +25,9 @@ exports.addStockToInventory = catchAsync(async (req, res, next) => {
 // get stock inventory details
 exports.getStock = catchAsync(async (req, res, next) => {
   const { stockId } = req.params;
-  const stockInventory = await Stock.findById(stockId);
+  const stockInventory = await Stock.findById(stockId)
+    .populate("productId")
+    .populate("inventoryId");
   if (!stockInventory)
     return next(new AppError("there is no stock found on FileSystem", 404));
   res.status(200).json({
