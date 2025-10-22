@@ -75,3 +75,73 @@ exports.getpurchase = catchAsync(async (req, res, next) => {
     },
   });
 });
+// get all drafted purchases
+exports.getAllDraftedPurchases = catchAsync(async (req, res, next) => {
+  const purchases = await PurchaseOrder.find({ status: "draft" });
+  res.status(200).json({
+    status: "success",
+    results: purchases.length,
+    data: {
+      purchases,
+    },
+  });
+});
+// get all approved purchases
+exports.getAllApprovedPurchases = catchAsync(async (req, res, next) => {
+  const purchases = await PurchaseOrder.find({
+    status: "approved",
+  });
+  res.status(200).json({
+    status: "success",
+    results: purchases.length,
+    data: {
+      purchases,
+    },
+  });
+});
+// get all delivered purchases
+exports.getAllDeliveredPurchases = catchAsync(async (req, res, next) => {
+  const purchases = await PurchaseOrder.find({
+    status: "delivered",
+  });
+  res.status(200).json({
+    status: "success",
+    results: purchases.length,
+    data: {
+      purchases,
+    },
+  });
+});
+
+// update purchase order into approved
+exports.updatePurchaseOrderIntoApproved = catchAsync(async (req, res, next) => {
+  const { purchaseOrderId } = req.params;
+  if (!purchaseOrderId)
+    return next(new AppError("Purchase order id required", 500));
+  const purchase = await PurchaseOrder.findById(purchaseOrderId);
+  purchase.status = "approved";
+  await purchase.save({ validateBeforeSave: false });
+  res.status(200).json({
+    status: "success",
+    data: {
+      purchase,
+    },
+  });
+});
+// update purchsase order into delivered
+exports.updatePurchaseOrderIntoDelivered = catchAsync(
+  async (req, res, next) => {
+    const { purchaseOrderId } = req.params;
+    if (!purchaseOrderId)
+      return next(new AppError("Purchase order id required", 500));
+    const purchase = await PurchaseOrder.findById(purchaseOrderId);
+    purchase.status = "delivered";
+    await purchase.save({ validateBeforeSave: false });
+    res.status(200).json({
+      status: "success",
+      data: {
+        purchase,
+      },
+    });
+  }
+);
