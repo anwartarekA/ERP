@@ -241,3 +241,17 @@ exports.stockOut = catchAsync(async (req, res, next) => {
     message: "Sale order delivered and stock updated",
   });
 });
+// get all stocks in an inventory
+exports.getStocks = catchAsync(async (req, res, next) => {
+  const { inventoryId } = req.params;
+  if (!inventoryId)
+    return next(new AppError("there is no inventoryId provided", 500));
+  const stocks = await Stock.find({ inventoryId }).populate("productId");
+  res.status(200).json({
+    status: "success",
+    results: stocks.length,
+    data: {
+      stocks,
+    },
+  });
+});

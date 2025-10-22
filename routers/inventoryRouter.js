@@ -9,6 +9,7 @@ const {
 const {
   addStockToInventory,
   getStock,
+  getStocks,
 } = require("./../controllers/stockController.js");
 const inventoryRouter = express.Router();
 
@@ -20,6 +21,7 @@ inventoryRouter
   .patch(updateInventory)
   .delete(deleteInventory);
 inventoryRouter.get("/:inventoryId/stocks/:stockId", getStock);
+inventoryRouter.get("/:inventoryId/stocks/", getStocks);
 inventoryRouter.post("/:inventoryId/stock/", addStockToInventory);
 
 module.exports = inventoryRouter;
