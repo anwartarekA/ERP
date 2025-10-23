@@ -37,7 +37,19 @@ exports.getStock = catchAsync(async (req, res, next) => {
     },
   });
 });
-
+// get all stocks
+exports.getAllStocks = catchAsync(async (req, res, next) => {
+  const stocks = await Stock.find()
+    .populate("productId")
+    .populate("inventoryId");
+  res.status(200).json({
+    status: "success",
+    results: stocks.length,
+    data: {
+      stocks,
+    },
+  });
+});
 // update stock inventory details
 exports.updateStock = catchAsync(async (req, res, next) => {
   const { stockId } = req.params;
@@ -247,6 +259,10 @@ exports.getStocks = catchAsync(async (req, res, next) => {
   if (!inventoryId)
     return next(new AppError("there is no inventoryId provided", 500));
   const stocks = await Stock.find({ inventoryId }).populate("productId");
+  if (!stocks)
+    return next(
+      new AppError("there is no stocks found belonging to this inventory", 404)
+    );
   res.status(200).json({
     status: "success",
     results: stocks.length,
