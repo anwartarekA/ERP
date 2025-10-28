@@ -12,14 +12,10 @@ const purchaseInvoiceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
     },
-    stock: {
+    pruchaseOrder: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Stock",
-      required: [true, "stock is required"],
-    },
-    date: {
-      type: Date,
-      default: Date.now(),
+      ref: "PurchaseOrder",
+      required: [true, "purchase order is required"],
     },
     dueDate: Date,
     products: [
@@ -29,7 +25,14 @@ const purchaseInvoiceSchema = new mongoose.Schema(
           ref: "Product",
           required: [true, "product is required"],
         },
-        quantity: {
+        inventory: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Inventory",
+          required: [true, "inventory is required"],
+        },
+        code: String,
+        quantity: Number,
+        deliveredQuantity: {
           type: Number,
           required: [true, "quantity is required"],
           min: [0, "quantity can not be negative"],
@@ -39,34 +42,18 @@ const purchaseInvoiceSchema = new mongoose.Schema(
           required: [true, "price is required"],
           min: [0, "price can not be negative"],
         },
-        totalPrice: Number,
+        total: Number,
+        tax: Number,
       },
     ],
-    discount: {
-      type: Number,
-      default: 0,
-    },
-    shippingCost: {
-      type: Number,
-      default: 0,
-    },
-    totalAmount: Number,
-    paidAmount: {
-      type: Number,
-      default: 0,
-      min: [true, "paid amount can not be negative"],
-    },
-    remainingAmount: {
-      type: Number,
-      default: 0,
-      min: [0, "remaining amount can not be negative"],
-    },
+    totalPayment: Number,
     paymentStatus: {
       type: String,
       enum: {
         values: ["paid", "unpaid", "partial"],
         message: "selected payment status is invalid",
       },
+      default: "unpaid",
     },
     notes: String,
     createdBy: {
@@ -76,20 +63,6 @@ const purchaseInvoiceSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-PurchaseInvoice.pre("save", function (next) {
-  this.products = this.products.map((item) => {
-    item.totalPrice = item.quantity * item.price;
-    item.totalPrice = item.totalPrice - (item.discount * item.totalPrice) / 100;
-    return item;
-  });
-  this.totalAmount = this.products.reduce(
-    (acc, current) => acc + current.totalPrice,
-    0
-  );
-  const randomNum = Math.floor(Math.random() * 600000);
-  this.invoiceNumber = `INV-${randomNum}-000`;
-  next();
-});
 
 const PurchaseInvoice = mongoose.model(
   "PurchaseInvoice",

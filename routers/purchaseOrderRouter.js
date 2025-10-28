@@ -11,7 +11,10 @@ const {
   updatePurchaseOrderIntoApproved,
   updatePurchaseOrderIntoDelivered,
 } = require("../controllers/purchaseOrderController");
-const { stockIn } = require("./../controllers/stockController");
+const {
+  checkDeliveredQuantity,
+  stockIn,
+} = require("./../controllers/stockController");
 const router = express.Router();
 router.route("/").post(createPurchaseOrder).get(getAllPurchases);
 router.get("/status=draft", getAllDraftedPurchases);
@@ -25,5 +28,5 @@ router
   .delete(deletePurchaseOrder);
 router.patch("/:purchaseOrderId/approve", updatePurchaseOrderIntoApproved);
 router.patch("/:purchaseOrderId/deliver", updatePurchaseOrderIntoDelivered);
-router.get("/:purchaseOrderId/delivered", stockIn);
+router.get("/:purchaseOrderId/delivered", checkDeliveredQuantity, stockIn);
 module.exports = router;

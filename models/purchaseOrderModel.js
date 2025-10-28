@@ -33,14 +33,22 @@ const purchaseOrderSchema = new mongoose.Schema(
           required: [true, "Product quantity is required"],
           min: 1,
         },
+        deliveredQuantity: Number,
+        remainingQuantity: {
+          type: Number,
+          default: function () {
+            return this.quantity;
+          },
+        },
         price: {
           type: Number,
           required: [true, "Product price is required"],
         },
-        discount: Number,
-        total: {
+        discount: {
           type: Number,
+          default: 0,
         },
+        total: Number,
         inventoryId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Inventory",
@@ -68,6 +76,10 @@ const purchaseOrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 purchaseOrderSchema.pre("save", function (next) {
+  if (this.isNew) {
+    const randomNum = Math.floor(Math.random() * 600000);
+    this.invoiceNumber = `INV-${randomNum}-000`;
+  }
   this.products = this.products.map((item) => {
     item.total = item.quantity * item.price;
     item.total = item.total - (item.discount * item.total) / 100;
@@ -77,8 +89,6 @@ purchaseOrderSchema.pre("save", function (next) {
     (acc, current) => acc + current.total,
     0
   );
-  const randomNum = Math.floor(Math.random() * 600000);
-  this.invoiceNumber = `INV-${randomNum}-000`;
   next();
 });
 const PurchaseOrder = mongoose.model("PurchaseOrder", purchaseOrderSchema);
