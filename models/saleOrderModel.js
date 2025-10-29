@@ -40,6 +40,7 @@ const saleOrderSchema = new mongooose.Schema(
           required: [true, "Product price is required"],
         },
         discount: Number,
+        code: Number,
         total: {
           type: Number,
         },
@@ -49,6 +50,7 @@ const saleOrderSchema = new mongooose.Schema(
         },
       },
     ],
+    tax: Number,
     expectedDeliveryDate: {
       type: Date,
       required: [true, "Expected delivery date is required"],
@@ -65,23 +67,30 @@ const saleOrderSchema = new mongooose.Schema(
       ref: "User",
       required: [true, "sale order must have a creator"],
     },
+    shippingCost: Number,
     totalAmount: Number,
   },
   { timestamps: true }
 );
 
 saleOrderSchema.pre("save", function (next) {
+  if (this.isNew) {
+    const randomNum = Math.floor(Math.random() * 600000);
+    this.invoiceNumber = `INV-${randomNum}-000`;
+  }
   this.products = this.products.map((item) => {
     item.total = item.quantity * item.price;
     item.total = item.total - (item.discount * item.total) / 100;
+
     return item;
   });
+
   this.totalAmount = this.products.reduce(
     (acc, current) => acc + current.total,
     0
   );
-  const randomNum = Math.floor(Math.random() * 600000);
-  this.invoiceNumber = `INV-${randomNum}-000`;
+  this.totalAmount += (this.tax * this.totalAmount) / 100;
+  this.totalAmount += this.shippingCost;
   next();
 });
 const SaleOrder = mongoose.model("SaleOrder", saleOrderSchema);
