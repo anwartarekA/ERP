@@ -26,7 +26,6 @@ exports.createInvoice = catchAsync(async (req, res, next) => {
       };
     })
   );
-  console.log(saleOrder.totalAmount);
   const invoice = await SaleInvoice.create({
     invoiceNumber: saleOrder.invoiceNumber,
     customer: saleOrder.customerId,

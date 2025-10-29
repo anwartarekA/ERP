@@ -6,7 +6,7 @@ const stockTransferSchema = new mongoose.Schema(
       type: String,
       required: [true, "select the status"],
       enum: {
-        values: ["pending", "shipping", "delivered"],
+        values: ["draft", "shipping", "delivered"],
         message: "{VALUE} is not supported",
       },
     },
@@ -26,26 +26,21 @@ const stockTransferSchema = new mongoose.Schema(
     },
     products: Array,
     shippingCost: Number,
-    total: Number,
   },
   {
     timestamps: true,
   }
 );
-stockTransferSchema.pre("save", async function (next) {
-  const totalArray = await Promise.all(
-    this.products.map(
-      async (product) =>
-        await Product.findById(product.productId).select("-_id total")
-    )
-  );
-  const totalAmount = totalArray.reduce(
-    (acc, current) => acc + current.total,
-    0
-  );
-  const amount = totalArray.reduce((acc, current) => acc + current.total, 0);
-  this.total = amount + this.shippingCost;
-  next();
-});
+// stockTransferSchema.pre("save", async function (next) {
+//   const totalArray = await Promise.all(
+//     this.products.map(
+//       async (product) =>
+//         await Product.findById(product.productId).select("-_id total")
+//     )
+//   );
+//   const amount = totalArray.reduce((acc, current) => acc + current.total, 0);
+//   this.total = amount + this.shippingCost;
+//   next();
+// });
 const StockTransfer = mongoose.model("StockTransfer", stockTransferSchema);
 module.exports = StockTransfer;
